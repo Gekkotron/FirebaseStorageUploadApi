@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: firebase-storage-api
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=production
+      - PORT=5001
+      - FIREBASE_CREDENTIALS_PATH=/app/credential.json
+      - FIREBASE_STORAGE_BUCKET=${FIREBASE_STORAGE_BUCKET}
+    volumes:
+      - ./credential.json:/app/credential.json:ro
+      - ./.env:/app/.env:ro
+    restart: unless-stopped

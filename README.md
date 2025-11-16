@@ -50,6 +50,8 @@ A simple Flask API to upload files (JPG, MP4) to Firebase Storage.
 
 ## Running the Application
 
+### Option 1: Local Development
+
 Start the Flask development server:
 
 ```bash
@@ -57,6 +59,29 @@ python app.py
 ```
 
 The API will be available at `http://localhost:5001`
+
+### Option 2: Docker
+
+**Build and run with Docker:**
+```bash
+docker build -t firebase-storage-api .
+docker run -p 5001:5001 --env-file .env -v $(pwd)/credential.json:/app/credential.json:ro firebase-storage-api
+```
+
+**Or use Docker Compose:**
+```bash
+docker compose up -d
+```
+
+**View logs:**
+```bash
+docker compose logs -f
+```
+
+**Stop the container:**
+```bash
+docker compose down
+```
 
 ## API Endpoints
 
