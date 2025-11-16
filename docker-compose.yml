@@ -14,4 +14,7 @@ services:
     volumes:
       - ./credential.json:/app/credential.json:ro
       - ./.env:/app/.env:ro
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     restart: unless-stopped

@@ -6,6 +6,7 @@ from firebase_admin import credentials, storage
 from werkzeug.utils import secure_filename
 import hashlib
 from dotenv import load_dotenv
+import google.auth.transport.requests
 
 # Load environment variables
 load_dotenv()
@@ -17,12 +18,26 @@ CORS(app)
 # Configuration
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'mp4'}
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
+REQUEST_TIMEOUT = 15  # seconds
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate(os.getenv('FIREBASE_CREDENTIALS_PATH', 'credential.json'))
+cred_path = os.getenv('FIREBASE_CREDENTIALS_PATH', 'credential.json')
+cred = credentials.Certificate(cred_path)
 firebase_admin.initialize_app(cred, {
     'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET')
 })
+
+# Set custom timeout for Firebase storage operations
+original_request = google.auth.transport.requests.Request
+
+
+class TimeoutRequest(google.auth.transport.requests.Request):
+    def __call__(self, *args, **kwargs):
+        kwargs['timeout'] = REQUEST_TIMEOUT
+        return original_request.__call__(self, *args, **kwargs)
+
+
+google.auth.transport.requests.Request = TimeoutRequest
 
 bucket = storage.bucket()
 
