@@ -3,7 +3,6 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import firebase_admin
 from firebase_admin import credentials, storage
-from werkzeug.utils import secure_filename
 import hashlib
 from dotenv import load_dotenv
 import google.auth.transport.requests
@@ -95,12 +94,14 @@ def upload_file():
         
         # Generate filename based on strategy
         original_filename = file.filename or 'unnamed'
-        filename = secure_filename(original_filename)
-        extension = filename.rsplit('.', 1)[1].lower()
+        if '.' in original_filename:
+            extension = original_filename.rsplit('.', 1)[1].lower()
+        else:
+            extension = ''
         
         if use_original_name:
-            # Use the original filename (without path)
-            unique_filename = filename
+            # Use the original filename as-is
+            unique_filename = original_filename
         else:
             # Calculate file hash for deduplication
             file.seek(0)
@@ -127,7 +128,7 @@ def upload_file():
                 'data': {
                     'filename': unique_filename,
                     'storage_path': storage_path,
-                    'original_filename': filename,
+                    'original_filename': original_filename,
                     'size': file_size,
                     'content_type': file.content_type,
                     'url': blob.public_url
@@ -149,7 +150,7 @@ def upload_file():
             'data': {
                 'filename': unique_filename,
                 'storage_path': storage_path,
-                'original_filename': filename,
+                'original_filename': original_filename,
                 'size': file_size,
                 'content_type': file.content_type,
                 'url': url
