@@ -4,7 +4,7 @@ from flask_cors import CORS
 import firebase_admin
 from firebase_admin import credentials, storage
 from werkzeug.utils import secure_filename
-import uuid
+import hashlib
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -44,7 +44,10 @@ def upload_file():
     """
     Upload file to Firebase Storage
     Accepts: jpg, jpeg, mp4 files
-    Optional parameter: folder (string) - specify folder path in Firebase Storage
+    Optional parameters:
+      - folder (string): specify folder path in Firebase Storage
+      - use_original_name (bool): use original filename instead of hash
+      - deduplicate (bool): use content hash to avoid duplicates (default)
     Returns: JSON with file URL and metadata
     """
     try:
@@ -72,11 +75,23 @@ def upload_file():
         
         # Get optional folder parameter
         folder = request.form.get('folder', '').strip()
+        use_original_name = request.form.get(
+            'use_original_name', 'false').lower() == 'true'
         
-        # Generate unique filename
-        filename = secure_filename(file.filename)
+        # Generate filename based on strategy
+        original_filename = file.filename or 'unnamed'
+        filename = secure_filename(original_filename)
         extension = filename.rsplit('.', 1)[1].lower()
-        unique_filename = f"{uuid.uuid4()}.{extension}"
+        
+        if use_original_name:
+            # Use the original filename (without path)
+            unique_filename = filename
+        else:
+            # Calculate file hash for deduplication
+            file.seek(0)
+            file_hash = hashlib.sha256(file.read()).hexdigest()[:16]
+            file.seek(0)
+            unique_filename = f"{file_hash}.{extension}"
         
         # Construct storage path with folder if provided
         if folder:
@@ -86,8 +101,25 @@ def upload_file():
         else:
             storage_path = unique_filename
         
-        # Upload to Firebase Storage
+        # Check if file already exists (only for hash-based naming)
         blob = bucket.blob(storage_path)
+        if not use_original_name and blob.exists():
+            # File with same content already exists, return existing URL
+            blob.reload()
+            return jsonify({
+                'success': True,
+                'message': 'File already exists',
+                'data': {
+                    'filename': unique_filename,
+                    'storage_path': storage_path,
+                    'original_filename': filename,
+                    'size': file_size,
+                    'content_type': file.content_type,
+                    'url': blob.public_url
+                }
+            }), 200
+        
+        # Upload to Firebase Storage
         blob.upload_from_file(file, content_type=file.content_type)
         
         # Make the file publicly accessible (optional)
