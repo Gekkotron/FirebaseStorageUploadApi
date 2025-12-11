@@ -16,7 +16,7 @@ CORS(app)
 
 # Configuration
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'mp4'}
-MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
+MAX_FILE_SIZE = 250 * 1024 * 1024  # 250MB
 REQUEST_TIMEOUT = 15  # seconds
 
 # Initialize Firebase Admin SDK
