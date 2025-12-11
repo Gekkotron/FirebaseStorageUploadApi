@@ -5,10 +5,10 @@ services:
     build: .
     container_name: firebase-storage-api
     ports:
-      - "5001:5001"
+      - "3000:3000"
     environment:
       - FLASK_ENV=production
-      - PORT=5001
+      - PORT=3000
       - FIREBASE_CREDENTIALS_PATH=/app/credential.json
       - FIREBASE_STORAGE_BUCKET=${FIREBASE_STORAGE_BUCKET}
     volumes:
